@@ -2,16 +2,14 @@ name: Build and Publish Client Release
 
 on:
   push:
-    branches: [ main, master ]
-    tags:
-      - 'v*' # Triggers a release whenever you push a version tag like v1.0
-  workflow_dispatch: # Allows manual trigger anytime from the Actions tab
+    branches: [ master ]
+  workflow_dispatch:
 
 jobs:
   build-and-release:
     runs-on: ubuntu-22.04
     permissions:
-      contents: write # Grants GitHub permission to publish Releases and upload APK assets
+      contents: write
     steps:
       - name: Checkout repository and submodules
         uses: actions/checkout@v4
@@ -40,8 +38,8 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: android/app/build/outputs/apk/debug/*.apk
-          tag_name: ${{ github.ref_type == 'tag' && github.ref_name || format('build-{0}', github.run_number) }}
-          name: Techblox Client ${{ github.ref_type == 'tag' && github.ref_name || format('Build #{0}', github.run_number) }}
+          tag_name: build-${{ github.run_number }}
+          name: Techblox Client Build #${{ github.run_number }}
           draft: false
           prerelease: false
         env:
