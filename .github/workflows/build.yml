@@ -1,13 +1,17 @@
-name: Build Custom Client APK
+name: Build and Publish Client Release
 
 on:
   push:
     branches: [ main, master ]
-  workflow_dispatch:
+    tags:
+      - 'v*' # Triggers a release whenever you push a version tag like v1.0
+  workflow_dispatch: # Allows manual trigger anytime from the Actions tab
 
 jobs:
-  build:
+  build-and-release:
     runs-on: ubuntu-22.04
+    permissions:
+      contents: write # Grants GitHub permission to publish Releases and upload APK assets
     steps:
       - name: Checkout repository and submodules
         uses: actions/checkout@v4
@@ -26,14 +30,19 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Build Debug APK with Gradle
+      - name: Build Fast ARM64 APK with Gradle
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug
+          ./gradlew assembleDebug -Pandroid.injected.build.abi=arm64-v8a
 
-      - name: Save APK Artifact
-        uses: actions/upload-artifact@v4
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
         with:
-          name: custom-luanti-app
-          path: android/app/build/outputs/apk/debug/*.apk
+          files: android/app/build/outputs/apk/debug/*.apk
+          tag_name: ${{ github.ref_type == 'tag' && github.ref_name || format('build-{0}', github.run_number) }}
+          name: Techblox Client ${{ github.ref_type == 'tag' && github.ref_name || format('Build #{0}', github.run_number) }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
