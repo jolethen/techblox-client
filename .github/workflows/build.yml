@@ -24,7 +24,7 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-          cache: 'gradle' # Speeds up builds dramatically
+          cache: 'gradle'
 
       - name: Set up Android SDK & NDK
         uses: android-actions/setup-android@v3
@@ -35,7 +35,9 @@ jobs:
 
       - name: Make Gradle Wrapper Executable
         run: |
-          if [ -f "./build/android/gradlew" ]; then
+          if [ -f "./android/gradlew" ]; then
+            chmod +x ./android/gradlew
+          elif [ -f "./build/android/gradlew" ]; then
             chmod +x ./build/android/gradlew
           elif [ -f "./gradlew" ]; then
             chmod +x ./gradlew
@@ -43,7 +45,10 @@ jobs:
 
       - name: Build Android Release APK
         run: |
-          if [ -d "./build/android" ]; then
+          if [ -d "./android" ]; then
+            cd ./android
+            ./gradlew assembleRelease
+          elif [ -d "./build/android" ]; then
             cd ./build/android
             ./gradlew assembleRelease
           else
@@ -70,7 +75,7 @@ jobs:
           path: build_output/Luanti-release.apk
           retention-days: 7
 
-      # Attaches the APK to the actual Release tag when published
+      # Attaches the APK directly to the Release when published
       - name: Upload APK to GitHub Release
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'release'
